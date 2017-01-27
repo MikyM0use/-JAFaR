@@ -17,9 +17,11 @@
     Copyright © 2016 Michele Martinelli
 */
 
-#ifdef USE_OSD
-
 #include <avr/pgmspace.h>
+
+extern char STANDALONE;
+extern char USE_SCANNER;
+extern char USE_48CH;
 
 void osd_init(void) {
   //tv init
@@ -59,11 +61,11 @@ void osd_submenu(int8_t menu_pos, uint8_t band) {
 
   TV.draw_rect(9, 2 + menu_pos * MENU_Y_SIZE, 85, 7,  WHITE, INVERT); //current selection
 
-#ifndef STANDALONE
-  //timer
-  //TV.println(92, 3, (int)timer, DEC);
-  osd_display_timer();
-#endif
+  if (!STANDALONE) {
+    //timer
+    //TV.println(92, 3, (int)timer, DEC);
+    osd_display_timer();
+  }
 
 }
 
@@ -84,12 +86,10 @@ void osd_mainmenu(uint8_t menu_pos) {
   TV.printPGM(10, 3 + compute_position(BAND_E_POS) * MENU_Y_SIZE, PSTR("BAND E"));
   TV.printPGM(10, 3 + compute_position(BAND_F_POS) * MENU_Y_SIZE, PSTR("FATSHARK"));
   TV.printPGM(10, 3 + compute_position(BAND_R1_POS) * MENU_Y_SIZE, PSTR("RACEBAND"));
-#ifdef USE_SCANNER
-  TV.printPGM(10, 3 + compute_position(SCANNER_POS) * MENU_Y_SIZE, PSTR("SCANNER"));
-#endif
-#ifdef USE_48CH
-  TV.printPGM(10, 3 + compute_position(BAND_R2_POS) * MENU_Y_SIZE, PSTR("RACE2"));
-#endif
+  if (USE_SCANNER)
+    TV.printPGM(10, 3 + compute_position(SCANNER_POS) * MENU_Y_SIZE, PSTR("SCANNER"));
+  if (USE_48CH)
+    TV.printPGM(10, 3 + compute_position(BAND_R2_POS) * MENU_Y_SIZE, PSTR("RACE2"));
   TV.printPGM(10, 3 + compute_position(AUTOSCAN_POS) * MENU_Y_SIZE, PSTR("AUTOSCAN"));
 
   for (i = 0; i < NUM_BANDS; i++) {
@@ -99,13 +99,13 @@ void osd_mainmenu(uint8_t menu_pos) {
 
   TV.draw_rect(9, 2 + menu_pos * MENU_Y_SIZE, 85, 7,  WHITE, INVERT); //current selection
 
-#ifndef STANDALONE
-  //header and countdown
-  //TV.println(92, 3, (int)timer, DEC);
-  osd_display_timer();
-#endif
+  if (!STANDALONE) {
+    //header and countdown
+    //TV.println(92, 3, (int)timer, DEC);
+    osd_display_timer();
+  }
 }
-#ifdef USE_SCANNER
+
 void osd_scanner() {
   uint8_t s_timer = 5;
   while (s_timer-- > 0) {
@@ -131,17 +131,16 @@ void osd_scanner() {
   }
   s_timer = 9;
 }
-#endif //USE_SCANNER
 
 void osd_autoscan() {
   TV.clear_screen();
   TV.draw_rect(1, 1, 100, 94,  WHITE);
 
-#ifndef STANDALONE
-  //header and countdown
-  //TV.println(92, 3, (int)timer, DEC); //timer
-  osd_display_timer();
-#endif
+  if (!STANDALONE) {
+    //header and countdown
+    //TV.println(92, 3, (int)timer, DEC); //timer
+    osd_display_timer();
+  }
 
   for (uint8_t i = 0; i < 8; i++) {
     TV.print(10, 3 + i * MENU_Y_SIZE, pgm_read_word_near(channelFreqTable + rx5808.getfrom_top8(i)), DEC); //channel freq
@@ -161,6 +160,4 @@ void osd_display_timer() {
       TV.draw_rect(D_COL - 24, fh - height + 1, 4, height, WHITE, WHITE);
   }
 }
-
-#endif //not USE_OLED
 

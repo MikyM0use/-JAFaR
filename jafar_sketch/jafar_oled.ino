@@ -16,7 +16,11 @@
 
     Copyright © 2016 Michele Martinelli
 */
-#ifdef USE_OLED
+
+extern char FLIP_SCREEN;
+extern char STANDALONE;
+extern char USE_48CH
+extern char USE_SCANNER;
 
 void oled_message(char *str) {
   u8g.setFont(u8g_font_8x13);
@@ -55,9 +59,8 @@ void oled_splash() {
 }
 
 void oled_init(void) { // flip screen, if required
-#ifdef FLIP_SCREEN
-  u8g.setRot180();
-#endif
+  if (FLIP_SCREEN)
+    u8g.setRot180();
   // set SPI backup if required
   //u8g.setHardwareBackup(u8g_backup_avr_spi);
 
@@ -98,12 +101,12 @@ uint8_t oled_submenu(uint8_t menu_pos, uint8_t band) {
 
       u8g.drawStr( 0, 8 + i * 8, j_buf);
     }
-#ifndef STANDALONE
-    if (timer > 0) {
-      u8g.setPrintPos(110, 10);
-      u8g.print((int)timer);
+    if (!STANDALONE) {
+      if (timer > 0) {
+        u8g.setPrintPos(110, 10);
+        u8g.print((int)timer);
+      }
     }
-#endif
 
   } while ( u8g.nextPage() );
 }
@@ -112,11 +115,10 @@ void oled_mainmenu(uint8_t menu_pos) {
   int i;
   u8g.setFont(u8g_font_6x10);
 
-#ifdef STANDALONE
-  sprintf (j_buf, "last used: %x:%d", pgm_read_byte_near(channelNames + (8 * last_used_band) + last_used_freq_id), last_used_freq); //last used freq
-#else //no timer
-  sprintf (j_buf, "last used: %x:%d  %d", pgm_read_byte_near(channelNames + (8 * last_used_band) + last_used_freq_id), last_used_freq, (int)timer); //last used freq
-#endif
+  if (STANDALONE)
+    sprintf (j_buf, "last used: %x:%d", pgm_read_byte_near(channelNames + (8 * last_used_band) + last_used_freq_id), last_used_freq); //last used freq
+  else
+    sprintf (j_buf, "last used: %x:%d  %d", pgm_read_byte_near(channelNames + (8 * last_used_band) + last_used_freq_id), last_used_freq, (int)timer); //last used freq
 
   char *menu_strings[MENU_ITEMS];
 
@@ -128,12 +130,10 @@ void oled_mainmenu(uint8_t menu_pos) {
   menu_strings[compute_position(BAND_R1_POS)] = "RACEBAND1";
   menu_strings[compute_position(AUTOSCAN_POS)] = "AUTOSCAN";
 
-#ifdef USE_48CH
-  menu_strings[compute_position(BAND_R2_POS)] = "RACEBAND2";
-#endif
-#ifdef USE_SCANNER
-  menu_strings[compute_position(SCANNER_POS)] = "SCANNER";
-#endif
+  if (USE_48CH)
+    menu_strings[compute_position(BAND_R2_POS)] = "RACEBAND2";
+  if (USE_SCANNER)
+    menu_strings[compute_position(SCANNER_POS)] = "SCANNER";
 
   u8g.firstPage();
   do {
@@ -216,11 +216,10 @@ void oled_scanner() {
     } while ( u8g.nextPage() );
     delay(LOOPTIME);
 
-#ifdef STANDALONE
-    menu_pos = readSwitch();
-#else
-    timer -= (LOOPTIME / 1000.0);
-#endif
+    if (STANDALONE)
+      menu_pos = readSwitch();
+    else
+      timer -= (LOOPTIME / 1000.0);
   }
 }
 
@@ -244,10 +243,8 @@ void oled_autoscan(uint8_t reinit) {
 
       sprintf (j_buf, "%d   %x   %d ", pgm_read_word_near(channelFreqTable + rx5808.getfrom_top8(i)), pgm_read_byte_near(channelNames + rx5808.getfrom_top8(i)), rx5808.getVal(rx5808.getfrom_top8(i), 100));
 
-#ifndef STANDALONE
-      if (i == 0)
+      if (!STANDALONE && i == 0)
         sprintf (j_buf, "%s   %d ", j_buf, (int)timer); //timer on the first line
-#endif
 
       u8g.drawStr( 0, 8 + i * 8, j_buf);
     }
@@ -255,6 +252,4 @@ void oled_autoscan(uint8_t reinit) {
 
   } while ( u8g.nextPage() );
 }
-#endif //OLED
-
 
